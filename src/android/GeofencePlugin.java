@@ -8,7 +8,7 @@ import android.content.pm.PackageManager;
 import android.util.Log;
 import android.Manifest;
 
-import com.cowbell.cordova.geofence.geofencebackgroundsrvice.GeoFencingObserverService;
+import com.cowbell.cordova.geofence.GeoFencingObserverService;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.LocationRequest;

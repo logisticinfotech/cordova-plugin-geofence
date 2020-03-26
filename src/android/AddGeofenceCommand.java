@@ -4,7 +4,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.util.Log;
 
-import com.cowbell.cordova.geofence.geofencebackgroundsrvice.GeoFencingObserverService;
+import com.cowbell.cordova.geofence.GeoFencingObserverService;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.Geofence;
