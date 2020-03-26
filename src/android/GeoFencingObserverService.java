@@ -1,4 +1,4 @@
-package com.cowbell.cordova.geofence.geofencebackgroundsrvice;
+package com.cowbell.cordova.geofence;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
