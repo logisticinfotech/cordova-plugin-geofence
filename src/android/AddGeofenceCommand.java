@@ -42,6 +42,8 @@ public class AddGeofenceCommand extends AbstractGoogleServiceCommand {
             GeofencePlugin.isGeoFenceAdded = true;
             GeoFencingObserverService.stopService(context);
             GeoFencingObserverService.startService(context,false);
+            logger.log(Log.DEBUG, "Geofences successfully added");
+            CommandExecuted();
 
 //            LocationServices.GeofencingApi
 //                .addGeofences(mGoogleApiClient, geofencesToAdd, pendingIntent)
