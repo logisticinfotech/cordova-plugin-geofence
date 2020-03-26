@@ -1,10 +1,23 @@
 package com.cowbell.cordova.geofence;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.util.Log;
 import android.Manifest;
+
+import com.cowbell.cordova.geofence.geofencebackgroundsrvice.GeoFencingObserverService;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.ResolvableApiException;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.location.SettingsClient;
+import com.google.android.gms.tasks.Task;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -22,14 +35,21 @@ import java.util.List;
 public class GeofencePlugin extends CordovaPlugin {
     public static final String TAG = "GeofencePlugin";
 
+    public static final boolean inBackground = false;
     public static final String ERROR_UNKNOWN = "UNKNOWN";
     public static final String ERROR_PERMISSION_DENIED = "PERMISSION_DENIED";
     public static final String ERROR_GEOFENCE_NOT_AVAILABLE = "GEOFENCE_NOT_AVAILABLE";
     public static final String ERROR_GEOFENCE_LIMIT_EXCEEDED = "GEOFENCE_LIMIT_EXCEEDED";
+    private static final int REQUEST_CHECK_GPS_ENABLE = 1256;
 
     private GeoNotificationManager geoNotificationManager;
     private Context context;
     public static CordovaWebView webView = null;
+    private boolean gpsIsOn = false;
+    private Activity activity;
+
+    public static boolean isLogin = true;
+    public static boolean isGeoFenceAdded = false;
 
     private class Action {
         public String action;
@@ -47,16 +67,15 @@ public class GeofencePlugin extends CordovaPlugin {
     private Action executedAction;
 
     /**
-     * @param cordova
-     *            The context of the main Activity.
-     * @param webView
-     *            The associated CordovaWebView.
+     * @param cordova The context of the main Activity.
+     * @param webView The associated CordovaWebView.
      */
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
         GeofencePlugin.webView = webView;
         context = this.cordova.getActivity().getApplicationContext();
+        activity = this.cordova.getActivity();
         Logger.setLogger(new Logger(TAG, context, false));
         geoNotificationManager = new GeoNotificationManager(context);
     }
@@ -93,6 +112,10 @@ public class GeofencePlugin extends CordovaPlugin {
                     initialize(callbackContext);
                 } else if (action.equals("deviceReady")) {
                     deviceReady();
+                } else if (action.equals("startServiceInBackground")) {
+
+                } else if (action.equals("startServiceInForeground")) {
+
                 }
             }
         });
@@ -111,8 +134,7 @@ public class GeofencePlugin extends CordovaPlugin {
 
     public static void onTransitionReceived(List<GeoNotification> notifications) {
         Log.d(TAG, "Transition Event Received!");
-        String js = "setTimeout('geofence.onTransitionReceived("
-            + Gson.get().toJson(notifications) + ")',0)";
+        String js = "setTimeout(() => { geofence.onTransitionReceived(" + Gson.get().toJson(notifications) + ") }, 0)";
         if (webView == null) {
             Log.d(TAG, "Webview is null");
         } else {
@@ -123,7 +145,7 @@ public class GeofencePlugin extends CordovaPlugin {
     private void deviceReady() {
         Intent intent = cordova.getActivity().getIntent();
         String data = intent.getStringExtra("geofence.notification.data");
-        String js = "setTimeout('geofence.onNotificationClicked(" + data + ")',0)";
+        String js = "setTimeout(() => { geofence.onNotificationClicked(" + data + ") }, 0)";
 
         if (data == null) {
             Log.d(TAG, "No notifications clicked.");
@@ -134,15 +156,80 @@ public class GeofencePlugin extends CordovaPlugin {
 
     private void initialize(CallbackContext callbackContext) {
         String[] permissions = {
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_FINE_LOCATION
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION
         };
 
         if (!hasPermissions(permissions)) {
             PermissionHelper.requestPermissions(this, 0, permissions);
         } else {
             callbackContext.success();
+            handleGPSTracker();
         }
+    }
+
+    private void handleGPSTracker() {
+        Log.d(TAG, "handleGPSTracker: ");
+        LocationRequest locationRequest = LocationRequest.create();
+        locationRequest.setInterval(2000);
+        locationRequest.setFastestInterval(1000);
+        locationRequest.setSmallestDisplacement(100);
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+
+        LocationSettingsRequest.Builder builder1 = new LocationSettingsRequest.Builder()
+                .addLocationRequest(locationRequest);
+        SettingsClient client = LocationServices.getSettingsClient(context);
+        Task<LocationSettingsResponse> task = client.checkLocationSettings(builder1.build());
+
+        task.addOnSuccessListener(command -> {
+            gpsIsOn = true;
+            Log.d(TAG, "handleGPSTracker: success");
+//            GeoFencingObserverService.stopService(this);
+//            GeoFencingObserverService.startService(this, false);
+        });
+
+
+        task.addOnCompleteListener(
+                task1 -> {
+                    try {
+                        LocationSettingsResponse response = task1.getResult(ApiException.class);
+                        // All location settings are satisfied. The client can initialize location
+                        // requests here.
+                        gpsIsOn = true;
+                        Log.d(TAG, "handleGPSTracker: success");
+
+
+                    } catch (ApiException exception) {
+                        switch (exception.getStatusCode()) {
+                            case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                                // Location settings are not satisfied. But could be fixed by showing the
+                                // user a dialog.
+                                try {
+                                    // Cast to a resolvable exception.
+                                    ResolvableApiException resolvable = (ResolvableApiException) exception;
+                                    // Show the dialog by calling startResolutionForResult(),
+                                    // and check the result in onActivityResult().
+                                    resolvable.startResolutionForResult(
+                                            activity,
+                                            REQUEST_CHECK_GPS_ENABLE);
+                                } catch (IntentSender.SendIntentException e) {
+                                    // Ignore the error.
+                                    Log.e(TAG, "handleGPSTracker: ", e);
+                                } catch (ClassCastException e) {
+                                    // Ignore, should be an impossible error.
+                                    Log.e(TAG, "handleGPSTracker: ", e);
+                                }
+                                break;
+                            case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                                // Location settings are not satisfied. However, we have no way to fix the
+                                // settings so we won't show the dialog.
+                                Log.d(TAG, "handleGPSTracker:  settings so we won't show the dialog");
+                                break;
+                        }
+                    }
+                });
+
     }
 
     private boolean hasPermissions(String[] permissions) {
@@ -158,7 +245,7 @@ public class GeofencePlugin extends CordovaPlugin {
         PluginResult result;
 
         if (executedAction != null) {
-            for (int r:grantResults) {
+            for (int r : grantResults) {
                 if (r == PackageManager.PERMISSION_DENIED) {
                     Log.d(TAG, "Permission Denied!");
                     result = new PluginResult(PluginResult.Status.ILLEGAL_ACCESS_EXCEPTION);
@@ -170,6 +257,27 @@ public class GeofencePlugin extends CordovaPlugin {
             Log.d(TAG, "Permission Granted!");
             execute(executedAction);
             executedAction = null;
+        }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        Log.d(TAG, "onStart: ");
+        if (isLogin && isGeoFenceAdded){
+            GeoFencingObserverService.stopService(context);
+            GeoFencingObserverService.startService(context, false);
+        }
+
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        Log.d(TAG, "onStop: ");
+        if (isGeoFenceAdded && isLogin) {
+            GeoFencingObserverService.stopService(context);
+            GeoFencingObserverService.startService(context,true);
         }
     }
 }
