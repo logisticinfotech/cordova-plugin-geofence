@@ -213,7 +213,7 @@ public class GeoFencingObserverService extends Service implements GoogleApiClien
     private void startGeofencing() {
         Log.d(TAG, "Start geofencing monitoring call");
 
-        if (!googleApiClient.isConnected()) {
+        if (!googleApiClient.isConnected() || (!addGeofences && addGeofences.size() <= 0)) {
             Log.d(TAG, "Google API client not connected");
         } else {
             try {
