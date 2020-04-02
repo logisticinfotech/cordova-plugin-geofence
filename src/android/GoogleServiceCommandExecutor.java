@@ -17,11 +17,18 @@ public class GoogleServiceCommandExecutor implements IGoogleServiceCommandListen
     }
 
     private void ExecuteNext() {
-        if (commandsToExecute.isEmpty()) return;
-        isExecuting = true;
-        AbstractGoogleServiceCommand command = commandsToExecute.poll();
-        command.addListener(this);
-        command.Execute();
+        try {
+            if (commandsToExecute.isEmpty()) return;
+            isExecuting = true;
+            AbstractGoogleServiceCommand command = commandsToExecute.poll();
+            if (command != null) {
+                command.addListener(this);
+                command.Execute();
+
+            }
+        } catch (Exception e) {
+
+        }
     }
 
     @Override
