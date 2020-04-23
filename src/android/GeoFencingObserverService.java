@@ -128,11 +128,10 @@ public class GeoFencingObserverService extends Service implements GoogleApiClien
 //                .setLargeIcon(BitmapFactory.decodeResource(this.getResources(), R.mipmap.ic_launcher))
                 .setAutoCancel(true)
                 .setWhen(0)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setSound(null)
-
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-
+                .setOngoing(true)
                 .setContentIntent(pendingIntent);
 
 
@@ -197,6 +196,8 @@ public class GeoFencingObserverService extends Service implements GoogleApiClien
 
 
     public static void startService(Context context, boolean isInBackground) {
+        if (1==1)
+            return;
         Intent intent = new Intent(context, GeoFencingObserverService.class);
         intent.putExtra(FLAG, START_SERVICE);
         intent.putExtra(FLAG_BACKGROUND, isInBackground);
@@ -204,6 +205,8 @@ public class GeoFencingObserverService extends Service implements GoogleApiClien
     }
 
     public static void stopService(Context context) {
+        if (1==1)
+            return;
         Intent intent = new Intent(context, GeoFencingObserverService.class);
         intent.putExtra(FLAG, STOP_SERVICE);
         context.stopService(intent);

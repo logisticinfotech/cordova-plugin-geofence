@@ -8,6 +8,10 @@ import android.content.pm.PackageManager;
 import android.util.Log;
 import android.Manifest;
 
+import androidx.work.BackoffPolicy;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
+
 import com.cowbell.cordova.geofence.GeoFencingObserverService;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.ResolvableApiException;
@@ -31,6 +35,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class GeofencePlugin extends CordovaPlugin {
     public static final String TAG = "GeofencePlugin";
@@ -77,7 +82,7 @@ public class GeofencePlugin extends CordovaPlugin {
         context = this.cordova.getActivity().getApplicationContext();
         activity = this.cordova.getActivity();
         Logger.setLogger(new Logger(TAG, context, false));
-        geoNotificationManager = new GeoNotificationManager(context);
+        geoNotificationManager = new GeoNotificationManager(context,this.cordova.getActivity());
     }
 
     @Override
@@ -267,6 +272,17 @@ public class GeofencePlugin extends CordovaPlugin {
         if (isLogin && isGeoFenceAdded){
             GeoFencingObserverService.stopService(context);
             GeoFencingObserverService.startService(context, false);
+
+//            OneTimeWorkRequest uploadWorkRequest = new OneTimeWorkRequest.Builder(ObserverWorker.class)
+//                    .setBackoffCriteria(
+//                            BackoffPolicy.LINEAR,
+//                            OneTimeWorkRequest.MIN_BACKOFF_MILLIS,
+//                            TimeUnit.MILLISECONDS)
+//                    .addTag("geofenceWorker")
+//                    .build();
+//
+//            WorkManager.getInstance().enqueue(uploadWorkRequest);
+
         }
 
     }
@@ -278,6 +294,17 @@ public class GeofencePlugin extends CordovaPlugin {
         if (isGeoFenceAdded && isLogin) {
             GeoFencingObserverService.stopService(context);
             GeoFencingObserverService.startService(context,true);
+
+          /*  OneTimeWorkRequest uploadWorkRequest = new OneTimeWorkRequest.Builder(ObserverWorker.class)
+                    .setBackoffCriteria(
+                            BackoffPolicy.LINEAR,
+                            OneTimeWorkRequest.MIN_BACKOFF_MILLIS,
+                            TimeUnit.MILLISECONDS)
+                    .addTag("geofenceWorker")
+                    .build();
+
+            WorkManager.getInstance().enqueue(uploadWorkRequest);*/
+
         }
     }
 }

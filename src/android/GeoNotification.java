@@ -16,6 +16,8 @@ public class GeoNotification {
     
     @Expose public Notification notification;
 
+
+
     public GeoNotification() {
     }
 
@@ -23,8 +25,8 @@ public class GeoNotification {
         return new Geofence.Builder()
             .setRequestId(id)
             .setTransitionTypes(transitionType)
-            .setCircularRegion(latitude, longitude, radius)
-            .setExpirationDuration(Long.MAX_VALUE).build();
+            .setCircularRegion(latitude, longitude, radius*50)
+            .setExpirationDuration(Geofence.NEVER_EXPIRE).build();
     }
 
     public String toJson() {
