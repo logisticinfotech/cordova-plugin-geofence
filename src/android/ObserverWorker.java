@@ -140,10 +140,16 @@ public class ObserverWorker extends Worker implements GoogleApiClient.Connection
     }
 
     private GeofencingRequest getGeofencingRequest() {
-        GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
-        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER | GeofencingRequest.INITIAL_TRIGGER_DWELL | GeofencingRequest.INITIAL_TRIGGER_EXIT);
-        builder.addGeofences(allGeoFence);
-        return builder.build();
+        try{
+            GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
+            builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER | GeofencingRequest.INITIAL_TRIGGER_DWELL | GeofencingRequest.INITIAL_TRIGGER_EXIT);
+            builder.addGeofences(allGeoFence);
+            return builder.build();    
+        }catch (ConcurrentModificationException ce){
+            return null;
+        }catch (Exception e){
+            return null;
+        } 
     }
 
 
